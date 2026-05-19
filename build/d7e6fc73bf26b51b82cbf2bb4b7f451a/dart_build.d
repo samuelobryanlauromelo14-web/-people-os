@@ -1,0 +1,1 @@
+ C:\\Users\\251162025\\Downloads\\people_os\\build\\d7e6fc73bf26b51b82cbf2bb4b7f451a\\dart_build_result.json:  C:\\SRC\\flutter\\bin\\cache\\dart-sdk\\version C:\\Users\\251162025\\Downloads\\people_os\\.dart_tool\\package_config.json C:\\Users\\251162025\\Downloads\\people_os\\pubspec.yaml c:\\users\\251162025\\downloads\\people_os\\.dart_tool\\package_config.json
