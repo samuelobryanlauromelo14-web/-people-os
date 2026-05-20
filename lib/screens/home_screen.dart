@@ -62,20 +62,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Navegar para formulário de criação ────────────────────────────────────
   Future<void> _abrirCriacao() async {
-    final criou = await Navigator.push<bool>(
+    final novoUsuario = await Navigator.push<Usuario>(
       context,
       MaterialPageRoute(builder: (_) => const FormularioScreen()),
     );
-    if (criou == true) _carregar();
+    if (novoUsuario != null) {
+      setState(() {
+        _todos.insert(0, novoUsuario);
+        _filtrar();
+      });
+    }
   }
 
   // ── Navegar para formulário de edição ─────────────────────────────────────
   Future<void> _abrirEdicao(Usuario usuario) async {
-    final editou = await Navigator.push<bool>(
+    final atualizado = await Navigator.push<Usuario>(
       context,
       MaterialPageRoute(builder: (_) => FormularioScreen(usuario: usuario)),
     );
-    if (editou == true) _carregar();
+    if (atualizado != null) {
+      setState(() {
+        final idx = _todos.indexWhere((u) => u.id == atualizado.id);
+        if (idx != -1) _todos[idx] = atualizado;
+        _filtrar();
+      });
+    }
   }
 
   // ── DELETE com confirmação ─────────────────────────────────────────────────
@@ -159,41 +170,72 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A2D4A), Color(0xFF1E2128)],
+        ),
+        border: Border.all(color: Tema.acento.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Tema.acento.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'People OS',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Tema.textoForte,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Tema.acento,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'People OS',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Tema.textoForte,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 4),
               Text(
                 'Gerenciador de contatos',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Tema.textoSuave),
+                style: GoogleFonts.dmSans(fontSize: 12, color: Tema.textoSuave),
               ),
             ],
           ),
           GestureDetector(
             onTap: _carregar,
             child: Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: Tema.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Tema.borda),
+                color: Tema.acento.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Tema.acento.withOpacity(0.3)),
               ),
-              child: const Icon(Icons.refresh_rounded, color: Tema.textoSuave, size: 20),
+              child: const Icon(Icons.refresh_rounded, color: Tema.acento, size: 20),
             ),
           ),
         ],
@@ -201,7 +243,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Barra de busca ────────────────────────────────────────────────────────
   Widget _buildBusca() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -222,7 +263,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Contador ──────────────────────────────────────────────────────────────
   Widget _buildContador() {
     if (_carregando || _erro != null) return const SizedBox.shrink();
     return Padding(
@@ -238,7 +278,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Conteúdo principal ────────────────────────────────────────────────────
   Widget _buildConteudo() {
     if (_carregando) return const LoadingCenter();
 
@@ -274,7 +313,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── FAB ───────────────────────────────────────────────────────────────────
   Widget _buildFab() {
     return FloatingActionButton.extended(
       onPressed: _abrirCriacao,

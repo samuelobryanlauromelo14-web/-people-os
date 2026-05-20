@@ -1,7 +1,4 @@
 // lib/widgets/widgets.dart
-//
-// Componentes visuais reutilizáveis.
-// Cada widget tem uma única responsabilidade.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,7 +11,7 @@ class AvatarUsuario extends StatelessWidget {
   final Usuario usuario;
   final double tamanho;
 
-  const AvatarUsuario({super.key, required this.usuario, this.tamanho = 44});
+  const AvatarUsuario({super.key, required this.usuario, this.tamanho = 56});
 
   @override
   Widget build(BuildContext context) {
@@ -24,16 +21,22 @@ class AvatarUsuario extends StatelessWidget {
       height: tamanho,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: cor.withOpacity(0.15),
-        border: Border.all(color: cor.withOpacity(0.4), width: 1.5),
+        gradient: RadialGradient(
+          colors: [cor.withOpacity(0.35), cor.withOpacity(0.1)],
+        ),
+        border: Border.all(color: cor.withOpacity(0.6), width: 2),
+        boxShadow: [
+          BoxShadow(color: cor.withOpacity(0.25), blurRadius: 12, spreadRadius: 1),
+        ],
       ),
       child: Center(
         child: Text(
           usuario.iniciais,
           style: GoogleFonts.dmSans(
-            fontSize: tamanho * 0.35,
-            fontWeight: FontWeight.w700,
+            fontSize: tamanho * 0.33,
+            fontWeight: FontWeight.w800,
             color: cor,
+            letterSpacing: 1,
           ),
         ),
       ),
@@ -41,19 +44,14 @@ class AvatarUsuario extends StatelessWidget {
   }
 }
 
-// ── Badge de informação (email, telefone, site) ───────────────────────────
+// ── Badge de informação ───────────────────────────────────────────────────
 
 class InfoBadge extends StatelessWidget {
   final IconData icone;
   final String texto;
   final Color? cor;
 
-  const InfoBadge({
-    super.key,
-    required this.icone,
-    required this.texto,
-    this.cor,
-  });
+  const InfoBadge({super.key, required this.icone, required this.texto, this.cor});
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +62,7 @@ class InfoBadge extends StatelessWidget {
         Expanded(
           child: Text(
             texto,
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
-              color: cor ?? Tema.textoSuave,
-            ),
+            style: GoogleFonts.dmSans(fontSize: 12, color: cor ?? Tema.textoSuave),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -76,9 +71,9 @@ class InfoBadge extends StatelessWidget {
   }
 }
 
-// ── Card de usuário ───────────────────────────────────────────────────────
+// ── Card de usuário com animação ──────────────────────────────────────────
 
-class CardUsuario extends StatelessWidget {
+class CardUsuario extends StatefulWidget {
   final Usuario usuario;
   final VoidCallback onEditar;
   final VoidCallback onDeletar;
@@ -91,58 +86,111 @@ class CardUsuario extends StatelessWidget {
   });
 
   @override
+  State<CardUsuario> createState() => _CardUsuarioState();
+}
+
+class _CardUsuarioState extends State<CardUsuario>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _escala;
+  late Animation<double> _opacidade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _escala = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
+    );
+    _opacidade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeIn),
+    );
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Tema.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Tema.borda),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            AvatarUsuario(usuario: usuario),
-            const SizedBox(width: 14),
+    final cor = Tema.avatarCor(widget.usuario.id);
 
-            // Nome + infos
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    usuario.nome,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  InfoBadge(icone: Icons.mail_outline_rounded, texto: usuario.email),
-                  if (usuario.telefone.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    InfoBadge(icone: Icons.phone_outlined, texto: usuario.telefone),
-                  ],
-                ],
+    return FadeTransition(
+      opacity: _opacidade,
+      child: ScaleTransition(
+        scale: _escala,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Tema.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cor.withOpacity(0.15), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
-            ),
-
-            // Ações
-            Column(
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
               children: [
-                _BotaoAcao(
-                  icone: Icons.edit_outlined,
-                  cor: Tema.acento,
-                  onTap: onEditar,
+                AvatarUsuario(usuario: widget.usuario, tamanho: 58),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.usuario.nome,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Tema.textoForte,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      InfoBadge(
+                        icone: Icons.mail_outline_rounded,
+                        texto: widget.usuario.email,
+                      ),
+                      if (widget.usuario.telefone.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        InfoBadge(
+                          icone: Icons.phone_outlined,
+                          texto: widget.usuario.telefone,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                _BotaoAcao(
-                  icone: Icons.delete_outline_rounded,
-                  cor: Tema.erro,
-                  onTap: onDeletar,
+                Column(
+                  children: [
+                    _BotaoAcao(
+                      icone: Icons.edit_outlined,
+                      cor: Tema.acento,
+                      onTap: widget.onEditar,
+                    ),
+                    const SizedBox(height: 8),
+                    _BotaoAcao(
+                      icone: Icons.delete_outline_rounded,
+                      cor: Tema.erro,
+                      onTap: widget.onDeletar,
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -161,13 +209,14 @@ class _BotaoAcao extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 34,
-        height: 34,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
-          color: cor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: cor.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cor.withOpacity(0.25)),
         ),
-        child: Icon(icone, size: 17, color: cor),
+        child: Icon(icone, size: 18, color: cor),
       ),
     );
   }
@@ -180,12 +229,7 @@ class EstadoVazio extends StatelessWidget {
   final VoidCallback? onAcao;
   final String? labelAcao;
 
-  const EstadoVazio({
-    super.key,
-    required this.mensagem,
-    this.onAcao,
-    this.labelAcao,
-  });
+  const EstadoVazio({super.key, required this.mensagem, this.onAcao, this.labelAcao});
 
   @override
   Widget build(BuildContext context) {
@@ -204,11 +248,7 @@ class EstadoVazio extends StatelessWidget {
             child: const Icon(Icons.person_search_outlined, color: Tema.textoSuave, size: 32),
           ),
           const SizedBox(height: 16),
-          Text(
-            mensagem,
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
+          Text(mensagem, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
           if (onAcao != null) ...[
             const SizedBox(height: 20),
             TextButton(onPressed: onAcao, child: Text(labelAcao ?? 'Tentar novamente')),
@@ -227,15 +267,12 @@ class LoadingCenter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(
-        color: Tema.acento,
-        strokeWidth: 2,
-      ),
+      child: CircularProgressIndicator(color: Tema.acento, strokeWidth: 2),
     );
   }
 }
 
-// ── Campo de formulário padronizado ──────────────────────────────────────
+// ── Campo de formulário ───────────────────────────────────────────────────
 
 class CampoTexto extends StatelessWidget {
   final TextEditingController controller;

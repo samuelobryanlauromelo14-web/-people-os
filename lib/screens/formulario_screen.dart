@@ -64,37 +64,53 @@ class _FormularioScreenState extends State<FormularioScreen> {
 
     try {
       if (_editando) {
-        await ApiService.atualizarUsuario(usuario);
-      } else {
-        await ApiService.criarUsuario(usuario);
-      }
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
+        final atualizado = await ApiService.atualizarUsuario(usuario);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
               const Icon(Icons.check_circle_outline, color: Tema.sucesso, size: 18),
               const SizedBox(width: 10),
-              Text(_editando ? 'Contato atualizado!' : 'Contato criado!'),
-            ],
+              const Text('Contato atualizado!'),
+            ]),
           ),
-        ),
-      );
+        );
+        Navigator.pop(context, atualizado);
+      } else {
+        // Cria um usuario local com id temporário baseado no tempo
+        // para não depender da API retornar um id real
+        final novoLocal = Usuario(
+          id: DateTime.now().millisecondsSinceEpoch,
+          nome: usuario.nome,
+          email: usuario.email,
+          telefone: usuario.telefone,
+          site: usuario.site,
+        );
 
-      Navigator.pop(context, true);
+        // Tenta chamar a API mas não depende do retorno dela
+        ApiService.criarUsuario(usuario).catchError((_) => novoLocal);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_outline, color: Tema.sucesso, size: 18),
+              const SizedBox(width: 10),
+              const Text('Contato criado!'),
+            ]),
+          ),
+        );
+        Navigator.pop(context, novoLocal);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Tema.erro, size: 18),
-              const SizedBox(width: 10),
-              Expanded(child: Text('Erro: $e')),
-            ],
-          ),
+          content: Row(children: [
+            const Icon(Icons.error_outline, color: Tema.erro, size: 18),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Erro: $e')),
+          ]),
         ),
       );
     } finally {
@@ -119,14 +135,12 @@ class _FormularioScreenState extends State<FormularioScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Avatar de preview
               if (_editando) ...[
                 Center(child: AvatarUsuario(usuario: widget.usuario!, tamanho: 72)),
                 const SizedBox(height: 28),
               ] else
                 const SizedBox(height: 8),
 
-              // ── Campos ────────────────────────────────────────
               CampoTexto(
                 controller: _nomeCtrl,
                 label: 'Nome completo',
@@ -165,7 +179,6 @@ class _FormularioScreenState extends State<FormularioScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Botão salvar ──────────────────────────────────
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
